@@ -89,7 +89,7 @@ class UserBase(BaseModel):
     email: EmailStr
 
 class UserCreate(UserBase):
-    password_hash: str
+    password: str
     role_id: int
     office_id: Optional[int] = None
 
@@ -207,3 +207,11 @@ class IncidentHistoryWithRelations(IncidentHistoryResponse):
     status: Optional[IncidentStatusResponse] = None
 
 IncidentWithRelations.model_rebuild()
+
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
