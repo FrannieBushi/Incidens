@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './Login.css';
 
 interface Credentials {
@@ -11,6 +12,7 @@ const Login: React.FC = () => {
     email: '',
     password: ''
   });
+  const navigate = useNavigate(); 
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -35,7 +37,23 @@ const Login: React.FC = () => {
       if (response.ok) {
         const data = await response.json();
         localStorage.setItem('token', data.access_token);
-        window.location.href = '/dashboard';
+        
+        const userResponse = await fetch('http://localhost:8000/me/', {
+          headers: {
+            'Authorization': `Bearer ${data.access_token}`
+          }
+        });
+        
+        if (userResponse.ok) {
+          const userData = await userResponse.json();
+          if (userData.role_id === 1) { 
+            navigate('/admin-dashboard'); 
+          } else if (userData.role_id === 2) { 
+            navigate('/tech-dashboard'); 
+          } else { 
+            navigate('/user-dashboard'); 
+          }
+        }
       } else {
         alert('Credenciales incorrectas');
       }
