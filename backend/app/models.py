@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, Text, TIMESTAMP
 from sqlalchemy.orm import relationship
 
-from backend.app.database import Base  # ✅
+from backend.app.database import Base
 from .database import Base
 
 
