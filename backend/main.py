@@ -1,5 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
+from typing import List  
 from contextlib import asynccontextmanager
 import sys
 from pathlib import Path
@@ -73,3 +75,71 @@ async def root():
 @app.get("/health")
 async def health_check():
     return {"status": "healthy", "message": "API is running normally"}
+
+@app.get("/users/", response_model=List[schemas.UserResponse])
+async def get_users(db: AsyncSession = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    if current_user.role_id != 1:
+        raise HTTPException(status_code=403, detail="No autorizado")
+    result = await db.execute(select(models.User))
+    return result.scalars().all()
+
+@app.post("/users/", response_model=schemas.UserResponse)
+async def create_user(user: schemas.UserCreate, db: AsyncSession = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    if current_user.role_id != 1:
+        raise HTTPException(status_code=403, detail="No autorizado")
+    return await crud.create_user(db, user)
+
+@app.put("/users/{user_id}", response_model=schemas.UserResponse)
+async def update_user(user_id: int, user: schemas.UserUpdate, db: AsyncSession = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    if current_user.role_id != 1:
+        raise HTTPException(status_code=403, detail="No autorizado")
+    return await crud.update_user(db, user_id, user)
+
+@app.delete("/users/{user_id}")
+async def delete_user(user_id: int, db: AsyncSession = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    if current_user.role_id != 1:
+        raise HTTPException(status_code=403, detail="No autorizado")
+    success = await crud.delete_user(db, user_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    return {"message": "Usuario eliminado"}
+
+@app.get("/offices/", response_model=List[schemas.OfficeResponse])
+async def get_offices(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(models.Office))
+    return result.scalars().all()
+
+@app.get("/user-roles/", response_model=List[schemas.UserRoleResponse])
+async def get_user_roles(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(models.UserRole))
+    return result.scalars().all()
+
+@app.get("/incident-statuses/", response_model=List[schemas.IncidentStatusResponse])
+async def get_incident_statuses(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(models.IncidentStatus))
+    return result.scalars().all()
+
+@app.get("/device-types/", response_model=List[schemas.DeviceTypeResponse])
+async def get_device_types(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(models.DeviceType))
+    return result.scalars().all()
+
+@app.get("/incidents/", response_model=List[schemas.IncidentResponse])
+async def get_incidents(db: AsyncSession = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    result = await db.execute(select(models.Incident))
+    return result.scalars().all()
+
+@app.post("/incidents/", response_model=schemas.IncidentResponse)
+async def create_incident(incident: schemas.IncidentCreate, db: AsyncSession = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    return await crud.create_incident(db, incident)
+
+@app.put("/incidents/{incident_id}", response_model=schemas.IncidentResponse)
+async def update_incident(incident_id: int, incident: schemas.IncidentUpdate, db: AsyncSession = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    return await crud.update_incident(db, incident_id, incident)
+
+@app.delete("/incidents/{incident_id}")
+async def delete_incident(incident_id: int, db: AsyncSession = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    success = await crud.delete_incident(db, incident_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Incidencia no encontrada")
+    return {"message": "Incidencia eliminada"}
