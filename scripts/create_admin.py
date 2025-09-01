@@ -14,12 +14,12 @@ async def create_admin_user():
             
             from sqlalchemy.future import select
             result = await db.execute(
-                select(models.User).filter(models.User.email == "mistborn@cosmere.com")
+                select(models.User).filter(models.User.email == "admin@admin.com")
             )
             existing_admin = result.scalars().first()
             
             if existing_admin:
-                print("El usuario Elend ya existe")
+                print("El usuario Admin ya existe")
                 print(f"   Email: {existing_admin.email}")
                 return existing_admin
             
@@ -33,9 +33,9 @@ async def create_admin_user():
             admin_role = next((role for role in roles if role.name == "admin"), roles[0])
             
             admin_user = models.User(
-                first_name="Elend",
-                last_name="Venture",
-                email="mistborn@cosmere.com",
+                first_name="Admin",
+                last_name="Admin",
+                email="admin@admin.com",
                 password_hash=hash_password("1234"),  
                 role_id=admin_role.role_id,
                 office_id=None  
@@ -45,7 +45,7 @@ async def create_admin_user():
             await db.commit()
             await db.refresh(admin_user)
             
-            print("Usuario Elend creado exitosamente!")
+            print("Usuario Admin creado exitosamente!")
             print(f"   Rol: {admin_role.name}")
             
             return admin_user
