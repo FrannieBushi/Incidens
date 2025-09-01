@@ -95,6 +95,33 @@ const AdminDashboard: React.FC = () => {
     device_id: ''
   });
 
+  // Estados para la paginación
+  const [currentPage, setCurrentPage] = useState(1);
+  const [usersPerPage] = useState(6); // Número de usuarios por página
+
+  // Calcula los usuarios a mostrar
+  const indexOfLastUser = currentPage * usersPerPage;
+  const indexOfFirstUser = indexOfLastUser - usersPerPage;
+  const currentUsers = users.slice(indexOfFirstUser, indexOfLastUser);
+  const totalPages = Math.ceil(users.length / usersPerPage);
+
+  // Función para cambiar de página
+  const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
+
+  // Función para ir a la página siguiente
+  const nextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  // Función para ir a la página anterior
+  const prevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
   const convertUserFormToUser = (form: UserFormData): Partial<User> => {
     return {
       first_name: form.first_name,
@@ -182,6 +209,7 @@ const AdminDashboard: React.FC = () => {
         fetchDashboardData();
         setShowUserModal(false);
         resetUserForm();
+        setCurrentPage(1); // Volver a la primera página después de agregar un usuario
       }
     } catch (error) {
       console.error('Error creating user:', error);
@@ -224,6 +252,10 @@ const AdminDashboard: React.FC = () => {
 
       if (response.ok) {
         fetchDashboardData();
+        // Si eliminamos el último usuario de la página, retroceder una página
+        if (currentUsers.length === 1 && currentPage > 1) {
+          setCurrentPage(currentPage - 1);
+        }
       }
     } catch (error) {
       console.error('Error deleting user:', error);
@@ -386,7 +418,7 @@ const AdminDashboard: React.FC = () => {
             </div>
 
             <div className="users-grid">
-              {users.map(user => (
+              {currentUsers.map(user => (
                 <div key={user.user_id} className="user-card">
                   <div className="user-info">
                     <h4>{user.first_name} {user.last_name}</h4>
@@ -417,6 +449,43 @@ const AdminDashboard: React.FC = () => {
                 </div>
               ))}
             </div>
+
+            {/* Paginación */}
+            {users.length > usersPerPage && (
+              <div className="pagination-container">
+                <div className="pagination">
+                  <button 
+                    onClick={prevPage} 
+                    disabled={currentPage === 1}
+                    className="pagination-btn"
+                  >
+                    &laquo; Anterior
+                  </button>
+                  
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(number => (
+                    <button
+                      key={number}
+                      onClick={() => paginate(number)}
+                      className={currentPage === number ? 'pagination-btn active' : 'pagination-btn'}
+                    >
+                      {number}
+                    </button>
+                  ))}
+                  
+                  <button 
+                    onClick={nextPage} 
+                    disabled={currentPage === totalPages}
+                    className="pagination-btn"
+                  >
+                    Siguiente &raquo;
+                  </button>
+                </div>
+                
+                <div className="pagination-info">
+                  Mostrando {indexOfFirstUser + 1}-{Math.min(indexOfLastUser, users.length)} de {users.length} usuarios
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -512,6 +581,7 @@ const AdminDashboard: React.FC = () => {
                   value={userForm.password}
                   onChange={(e) => setUserForm({...userForm, password: e.target.value})}
                   required={!editingUser}
+                  placeholder={editingUser ? "Dejar en blanco para mantener la actual" : ""}
                 />
               </div>
               <div className="form-group">
@@ -618,6 +688,20 @@ const AdminDashboard: React.FC = () => {
                   {offices.map(office => (
                     <option key={office.office_id} value={office.office_id}>
                       {office.city}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Tipo de Dispositivo</label>
+                <select
+                  value={incidentForm.device_id}
+                  onChange={(e) => setIncidentForm({...incidentForm, device_id: e.target.value})}
+                >
+                  <option value="">Seleccionar tipo (opcional)</option>
+                  {deviceTypes.map(type => (
+                    <option key={type.type_id} value={type.type_id}>
+                      {type.name}
                     </option>
                   ))}
                 </select>
